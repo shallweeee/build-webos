@@ -1,65 +1,52 @@
-# build-webos
+# 도커에서 webOS 빌드
 
-This repository contains the top level code that aggregates the various [OpenEmbedded](http://openembedded.org) layers into a whole from which [webOS Open Source Edition (OSE)](https://www.webosose.org/) images can be built.
+도커에서 webOS를 빌드하기 위한 환경 생성 및 webOS 빌드.
 
-## Prerequisites
+<mark>주의</mark>:  
+처음부터 빌드하면 상당히 많은 시간과 컴퓨팅 자원이 필요.  
+빌드가 필요 없으면 [공식 이미지](https://github.com/webosose/build-webos/releases) 사용을 권장.
 
-Before you begin, make sure that you prepare the target device and systems that meet the [System Requirements](https://www.webosose.org/docs/guides/setup/system-requirements/).
+## 파일
 
-## How to Build a webOS OSE Image
+- scripts/Dockerfile  
+  도커 이미지 생성용 도커파일. ubuntu 22.04 기준.
 
-To build a webOS OSE image, refer to [Building webOS OSE](https://www.webosose.org/docs/guides/setup/building-webos-ose/)
+- scripts/docksh  
+  docker 명령은 build-webos:<prerequisites.sh 버전>의 도커 이미지 생성,  
+  그 외는 도커상에서 명령어 실행 (source oe-init-build-env 포함).  
+  아래 사용 예제 참고.
 
-If you are already familiar with building webOS OSE, check the following quick summary:
+## 라즈베리파이 4용 이미지 생성
 
-``` bash
-# Download this repository
-$ git clone https://github.com/webosose/build-webos.git
+```bash
+$ git clone https://github.com/shallweeee/build-webos.git
 $ cd build-webos
-$ git checkout -t origin/<branch of the latest webOS OSE version>
-
-# Install and configure the build
-$ sudo scripts/prerequisites.sh
-$ ./mcf -p 0 -b 0 raspberrypi4-64
-
-# Start to build
-$ source oe-init-build-env
-$ bitbake webos-image
+# 도커 이미지 생성
+$ ./scripts/docksh docker
+# RPI4 64비트용으로 설정 (옵션 값은 다음 항목 참고)
+$ ./scripts/docksh ./mcf -b 5 -p 4 raspberrypi4-64
+# webos-image 빌드
+$ ./scripts/docksh bitbake webos-image
 ```
 
-> **Note**: See also [Flashing webOS OSE](https://www.webosose.org/docs/guides/setup/flashing-webos-ose/).
+## 병렬 옵션 찾기
 
-## Copyright and License Information
+CPU 가 여러 개인 환경에서 다음 옵션을 조절하여 빌드 속도를 높일 수 있다.  
+(물론 premirror 나 sstate-cache 사용이 더 빠름)
 
-Unless otherwise specified, all content, including all source code files and documentation files in this repository are:
+| mcf 옵션 | Yocto 변수        | 설명                                                        |
+| :------: | ----------------- | ----------------------------------------------------------- |
+|    -b    | BB_NUMBER_THREADS | 동시에 처리하는 BitBake 태스크 개수                         |
+|    -p    | PARALLEL_MAKE     | 한 태스크에서 동시에 컴파일하는 파일 개수 (make 의 -j 옵션) |
 
-Copyright (c) 2008-2023 LG Electronics, Inc.
+CPU 개수(`grep processor /proc/cpuinfo | wc -l`)가 8일 때,  
+[webOS OSE 빌드 가이드](https://www.webosose.org/docs/guides/setup/building-webos-ose/#appendix-a-how-to-find-the-optimum-parallelism-values)에서는 절반인 -b4 -p4 를,  
+[Yocto 문서](https://docs.yoctoproject.org/ref-manual/variables.html)에서는 같은 값인 -b8 -p8 를 권장.  
+테스트 환경에서는 swap 발생 상태를 기준으로 -b5 -p4 로 설정.  
+각자의 환경에 맞춰 설정.
 
-All content, including all source code files and documentation files in this repository except otherwise noted are: Licensed under the Apache License, Version 2.0 (the "License"); you may not use this content except in compliance with the License. You may obtain a copy of the License at
+## 참고
 
-http://www.apache.org/licenses/LICENSE-2.0
+- [원본 README](README-webos.md)
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
-SPDX-License-Identifier: Apache-2.0
-
-## How to Download Source Codes and Licenses
-
-If you *ONLY* want to check the source codes and those license information, enter the following commands:
-
-``` bash
-# Download this repository
-$ git clone https://github.com/webosose/build-webos.git
-$ cd build-webos
-$ git checkout -t origin/<branch of the latest webOS OSE version>
-
-# Install and configure the build
-$ sudo scripts/prerequisites.sh
-$ ./mcf -p 0 -b 0 raspberrypi4-64
-
-# Download source codes and licenses
-$ source oe-init-build-env
-$ bitbake --runall=patch webos-image
-```
-
-You can check the source codes and licenses under the `BUILD/work` directory.
+- [Building webOS OSE](https://www.webosose.org/docs/guides/setup/building-webos-ose/)

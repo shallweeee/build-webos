@@ -42,3 +42,6 @@ latest_project_baselines*txt
 
 # Local override file
 /webos-local.conf
+
+# Log
+bitbake-cookerdaemon.log

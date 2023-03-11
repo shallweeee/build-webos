@@ -1,0 +1,17 @@
+#! /bin/bash
+
+LOCAL_ROOT="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")"
+BUILD_ROOT=/buildroot
+
+get_docker_image() {
+  echo "build-webos:$(scripts/prerequisites.sh --version)"
+}
+
+build_docker() {
+  docker build -t $(get_docker_image) scripts
+  exit
+}
+
+cd $LOCAL_ROOT
+[ xdocker = x$1 ] && build_docker
+docker run --rm -it -u $(id -u):$(id -g) -v $LOCAL_ROOT:$BUILD_ROOT $(get_docker_image) "$@"
